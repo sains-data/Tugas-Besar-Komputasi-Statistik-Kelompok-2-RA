@@ -57,7 +57,8 @@ Hasil perbandingan akurasi menggunakan 3 teknik pembilangan acak **Inverse Trans
 │   └── Poster_2_RA.png     # File gambar poster
 ├── ppt
 │   └── PPT_2_RA.pdf        # Slide presentasi
-├── video/                  # Video penjelasan singkat
+├── video/
+│    └── Video_2_RA.mp4     # Video penjelasan singkat
 └── README.md
 
 
