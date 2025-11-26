@@ -7,4 +7,8 @@
 <br>
 
 Repositori ini berisi dokumentasi lengkap, kode, dataset, video, laporan, dan hasil analisis untuk **Tugas Besar Komputasi Statistik**.
+Penelitian ini bertujuan untuk melihat pola kedatangan mahasiswa di Perpustakaan GKU 1 ITERA menggunakan **Distribusi Negatif Binomial**.
+
+<img width="862" height="493" alt="image" src="https://github.com/user-attachments/assets/cf9b9464-30f9-45f7-b4db-2dd863b4b27d" />
+
 
