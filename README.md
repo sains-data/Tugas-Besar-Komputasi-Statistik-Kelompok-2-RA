@@ -15,7 +15,17 @@ Penelitian ini bertujuan untuk melihat pola kedatangan mahasiswa di Perpustakaan
 
 Hasil perbandingan akurasi menggunakan 3 teknik pembilangan acak **Inverse Transform**, **Acceptance-Rejection**, dan **Direct Simulation**
 
-<img width="494" height="216" alt="image" src="https://github.com/user-attachments/assets/324be02e-9173-43ec-9744-d037f5fcfda2" />
+TARGET -> Mean: 56.18 | Var: 517.58 
+
+Total Percobaan: 38042 
+Data Diterima  : 10000 
+Efisiensi      : 26.29 %
+
+             Mean_Sim  Var_Sim Err_Mean Err_Var
+Inverse       55.9166 506.7425   0.2652 10.8419
+AcceptReject  55.8617 508.4572   0.3201  9.1272
+Direct        57.3703 534.7221   1.1885 17.1376
+
 <img width="877" height="500" alt="image" src="https://github.com/user-attachments/assets/584eb1f0-daf8-407e-8ddf-c44515b6b72e" />
 
 ---
@@ -29,7 +39,7 @@ Hasil perbandingan akurasi menggunakan 3 teknik pembilangan acak **Inverse Trans
 | Tanty Widyastuti | 123450094 |
 | Ihsan Maulana Yusuf | 123450110 |
 
-**Dosen Pembimbing:** Fitri Nurjanah, S.Si., M.Mat.
+**Dosen Pembimbing:** Yoga Aji Sukma, S.Mat., M.Stat.
 
 ---
 
