@@ -46,7 +46,7 @@ Hasil perbandingan akurasi menggunakan 3 teknik pembilangan acak **Inverse Trans
 ### 📂 Struktur Repositori
 
 ```text
-.
+
 ├── dataset
 │   └── perpustakaan.xlsx   # Data sumber/input
 ├── kode
@@ -58,7 +58,7 @@ Hasil perbandingan akurasi menggunakan 3 teknik pembilangan acak **Inverse Trans
 ├── ppt
 │   └── PPT_2_RA.pdf        # Slide presentasi
 ├── video/
-│    └── Video_2_RA.mp4     # Video penjelasan singkat
+│   └── Video_2_RA.mp4     # Video penjelasan singkat
 └── README.md
 
 
