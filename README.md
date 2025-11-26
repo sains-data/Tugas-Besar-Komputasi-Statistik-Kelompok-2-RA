@@ -43,4 +43,21 @@ Hasil perbandingan akurasi menggunakan 3 teknik pembilangan acak **Inverse Trans
 
 ---
 
+### 📂 Struktur Repositori
+
+```text
+.
+├── dataset
+│   └── perpustakaan.xlsx   # Data sumber/input
+├── kode
+│   └── codeR_2_RA.Rmd      # Script utama analisis (R Markdown)
+├── laporan
+│   └── Laporan_2_RA.pdf    # Laporan lengkap tugas besar
+├── poster
+│   └── Poster_2_RA.png     # File gambar poster
+├── ppt
+│   └── PPT_2_RA.pdf        # Slide presentasi
+├── video/                  # Video penjelasan singkat
+└── README.md
+
 
