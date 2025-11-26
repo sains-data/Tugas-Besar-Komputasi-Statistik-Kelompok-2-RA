@@ -60,5 +60,3 @@ Tubes_Komstat2_RA/
 ├── video/
 │   └── Video_2_RA.mp4      # Video penjelasan singkat
 └── README.md
-
-
