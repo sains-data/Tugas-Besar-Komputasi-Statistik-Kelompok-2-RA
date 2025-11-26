@@ -3,3 +3,8 @@
 ![Language](https://img.shields.io/badge/Language-R-blue)
 ![Course](https://img.shields.io/badge/Course-Komputasi%20Statistik-green)
 ![Institute](https://img.shields.io/badge/Institute-ITERA-orange)
+
+<br>
+
+Repositori ini berisi dokumentasi lengkap, kode, dataset, video, laporan, dan hasil analisis untuk **Tugas Besar Komputasi Statistik**.
+
