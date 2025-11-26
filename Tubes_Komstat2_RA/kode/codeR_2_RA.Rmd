@@ -1,0 +1,525 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*.
+
+**Visualisasi Data Awal**
+
+```{r}
+# Data frekuensi awal
+freq <- c(71,77,100,88,69,60,52,70,71,40,31,47,69,71,68,76,33,40,20,40,20,23)
+
+# Histogram + Density
+hist(freq, breaks=10, probability=TRUE,
+     main="Histogram Frekuensi Harian",
+     xlab="Jumlah", col="lightblue", border="black")
+lines(density(freq), col="blue", lwd=2)
+
+# Tambahkan kurva normal untuk perbandingan
+curve(dnorm(x, mean=mean(freq), sd=sd(freq)),
+      add=TRUE, col="red", lwd=2, lty=2)
+legend("topright", legend=c("Density data","Normal approx"),
+       col=c("blue","red"), lwd=2, lty=c(1,2))
+
+# Boxplot
+boxplot(freq, main="Boxplot Frekuensi Harian",
+        ylab="Jumlah", col="lightgreen")
+
+# Q-Q Plot
+qqnorm(freq, main="Q-Q Plot Frekuensi Harian")
+qqline(freq, col="red", lwd=2)
+
+```
+
+**Statistika Deskriptif**
+
+```{r}
+# ===========================
+# Statistik Deskriptif
+# ===========================
+# Load package tambahan untuk skewness & kurtosis
+if(!require(moments)) install.packages("moments")
+library(moments)
+
+# Mean & Median
+mean_val <- mean(freq)
+median_val <- median(freq)
+
+# Modus (fungsi custom karena R tidak memiliki fungsi modus bawaan)
+get_mode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+mode_val <- get_mode(freq)
+
+# Variansi & Standar deviasi
+var_val <- var(freq)
+sd_val <- sd(freq)
+
+# Range, Min, Max
+range_val <- range(freq)
+min_val <- min(freq)
+max_val <- max(freq)
+
+# Kuartil & IQR
+quartiles <- quantile(freq)
+iqr_val <- IQR(freq)
+
+# Skewness & Kurtosis
+skew_val <- skewness(freq)
+kurt_val <- kurtosis(freq)
+
+# ===========================
+# Tampilkan hasil
+# ===========================
+cat("=== Statistik Deskriptif ===\n")
+cat("Mean           :", mean_val, "\n")
+cat("Median         :", median_val, "\n")
+cat("Modus          :", mode_val, "\n")
+cat("Variansi       :", var_val, "\n")
+cat("Standar Deviasi:", sd_val, "\n")
+cat("Range          :", paste(range_val, collapse = " - "), "\n")
+cat("Min            :", min_val, "\n")
+cat("Max            :", max_val, "\n")
+cat("Kuartil        :\n")
+print(quartiles)
+cat("IQR            :", iqr_val, "\n")
+cat("Skewness       :", skew_val, "\n")
+cat("Kurtosis       :", kurt_val, "\n")
+```
+
+**Uji Goodness-of-Fit untuk data diskrit**
+
+```{r}
+install.packages("DiscreteKS") # Install the missing package
+```
+
+```{r}
+# ===============================
+# Data kunjungan harian
+# ===============================
+x <- c(71, 77, 100, 88, 69, 60, 52, 70, 71, 40, 31, 47, 69, 71, 68, 76, 33, 40, 20, 40, 20, 23)
+n <- length(x)
+
+# ===============================
+# 1. Uji Poisson (Chi-Square)
+# ===============================
+lambda_hat <- mean(x)
+expected_pois <- dpois(sort(unique(x)), lambda_hat) * n
+observed <- table(x)
+
+chisq_pois <- sum((observed - expected_pois)^2 / expected_pois)
+df_pois <- length(observed) - 1 - 1
+p_value_pois <- pchisq(chisq_pois, df = df_pois, lower.tail = FALSE)
+
+cat("\n===== Uji Chi-Square Distribusi Poisson =====\n")
+cat("Statistic:", chisq_pois, "\n")
+cat("p-value :", p_value_pois, "\n\n")
+
+
+# ===============================
+# 2. Uji Binomial (Chi-Square)
+# Asumsi maksimum n_binom & p_binom diestimasi via MLE
+# ===============================
+p_hat <- mean(x) / max(x)
+n_binom <- max(x)
+
+expected_binom <- dbinom(as.numeric(names(observed)), size = n_binom, prob = p_hat) * n
+chisq_binom <- sum((observed - expected_binom)^2 / expected_binom)
+df_binom <- length(observed) - 2
+p_value_binom <- pchisq(chisq_binom, df = df_binom, lower.tail = FALSE)
+
+cat("===== Uji Chi-Square Distribusi Binomial =====\n")
+cat("Statistic:", chisq_binom, "\n")
+cat("p-value :", p_value_binom, "\n\n")
+
+
+# ===============================
+# 3. Negative Binomial – Likelihood Ratio Test (Poisson vs NegBin)
+# ===============================
+library(MASS)
+fit_pois <- glm(x ~ 1, family = poisson)
+fit_nb   <- glm.nb(x ~ 1)
+
+LRT <- 2 * (logLik(fit_nb) - logLik(fit_pois))
+p_value_LRT <- pchisq(LRT, df = 1, lower.tail = FALSE)
+
+cat("===== Likelihood Ratio Test Poisson vs Negative Binomial =====\n")
+cat("LRT Statistic:", LRT, "\n")
+cat("p-value:", p_value_LRT, "\n\n")
+
+
+# ===============================
+# 4. Bandingkan distribusi berdasarkan AIC dan BIC
+# ===============================
+models <- AIC(fit_pois, fit_nb)
+models$BIC <- BIC(fit_pois, fit_nb)
+
+cat("===== Perbandingan AIC & BIC =====\n")
+print(models)
+cat("\nDistribusi terbaik adalah yang memiliki nilai AIC & BIC terkecil.\n\n")
+
+
+# ===============================
+# 5. KS Test untuk distribusi diskrit (Poisson & NegBin)
+# ===============================
+library(DiscreteKS)
+
+ks_pois <- ks.test.discrete(x, ppois(x, lambda_hat))
+ks_nb   <- ks.test.discrete(x, pnbinom(x, size = fit_nb$theta, mu = lambda_hat))
+
+cat("===== Kolmogorov–Smirnov Test (discrete) =====\n")
+cat("Poisson KS p-value:", ks_pois$p.value, "\n")
+cat("NegBin KS p-value :", ks_nb$p.value, "\n")
+cat("\nSemakin besar p-value → semakin cocok.\n")
+```
+
+**Uji kenormalan data Shapiro-wilk**
+
+```{r}
+shapiro.test(x)
+```
+
+**1. Inverse-Transform Method**
+
+```{r}
+# ==========================================
+# BAGIAN 1: PERSIAPAN DATA & ESTIMASI PARAMETER
+# ==========================================
+
+# Data observasi kamu
+freq <- c(71,77,100,88,69,60,52,70,71,40,31,47,69,71,68,76,33,40,20,40,20,23)
+
+# Hitung Rata-rata dan Varians sampel
+mean_obs <- mean(freq)
+var_obs  <- var(freq)
+
+# Cek apakah cocok untuk Negatif Binomial (Syarat: Varians > Mean)
+if(var_obs <= mean_obs) {
+  stop("Varians lebih kecil dari Mean. Data ini tidak cocok untuk Negatif Binomial.")
+}
+
+# Hitung estimasi parameter r (size) dan p (prob) menggunakan Method of Moments
+# Rumus turunan: p = mean/var, r = mean^2 / (var - mean)
+p_hat <- mean_obs / var_obs
+r_hat <- (mean_obs^2) / (var_obs - mean_obs)
+
+cat("--- Parameter Hasil Estimasi ---\n")
+cat("Mean Data Asli :", mean_obs, "\n")
+cat("Var Data Asli  :", var_obs, "\n")
+cat("Estimasi r (size) :", r_hat, "\n")
+cat("Estimasi p (prob) :", p_hat, "\n\n")
+
+# ==========================================
+# BAGIAN 2: FUNGSI INVERSE TRANSFORM METHOD
+# ==========================================
+
+inv_transform_negbin <- function(n_gen, r, p) {
+  # Siapkan vector kosong untuk menampung hasil
+  hasil_x <- numeric(n_gen)
+  
+  for (i in 1:n_gen) {
+    # 1. Bangkitkan bilangan acak Uniform (0,1)
+    u <- runif(1)
+    
+    # 2. Mulai pencarian nilai x
+    # Kita mulai dari x = 0 dan akumulasi peluangnya (CDF)
+    x <- 0
+    cdf <- dnbinom(0, size = r, prob = p) # Probabilitas P(X=0)
+    
+    # 3. Loop: Selama nilai Uniform (u) masih lebih besar dari tumpukan peluang (cdf)
+    # terus tambahkan x dan tumpuk peluangnya.
+    while (u > cdf) {
+      x <- x + 1
+      cdf <- cdf + dnbinom(x, size = r, prob = p)
+    }
+    
+    # Simpan x yang ditemukan
+    hasil_x[i] <- x
+  }
+  return(hasil_x)
+}
+
+# ==========================================
+# BAGIAN 3: EKSEKUSI PEMBANGKITAN DATA
+# ==========================================
+
+# Kita bangkitkan jumlah data yang sama dengan data asli (n=22)
+# Agar perbandingannya apple-to-apple
+set.seed(123) # Kunci seed agar hasil konsisten saat dijalankan ulang
+data_bangkitan <- inv_transform_negbin(n_gen = length(freq), r = r_hat, p = p_hat)
+
+# Tampilkan Hasil
+print("--- Data Asli ---")
+print(freq)
+print("--- Data Bangkitan (Inverse Transform) ---")
+print(data_bangkitan)
+
+# ==========================================
+# OPSIONAL: VISUALISASI PERBANDINGAN
+# ==========================================
+par(mfrow=c(1,2)) # Bagi layar plot jadi 2
+
+# Plot Data Asli
+hist(freq, main="Histogram Data Asli", 
+     col="skyblue", xlab="Nilai", breaks=10, xlim=c(0, 120))
+abline(v=mean(freq), col="red", lwd=2) # Garis rata-rata
+
+# Plot Data Bangkitan
+hist(data_bangkitan, main="Histogram Data Bangkitan", 
+     col="lightgreen", xlab="Nilai", breaks=10, xlim=c(0, 120))
+abline(v=mean(data_bangkitan), col="red", lwd=2) # Garis rata-rata
+```
+
+**2. Acceptance-rejection Method**
+
+```{r}
+# ==========================================
+# 1. PERSIAPAN PARAMETER (Sama seperti sebelumnya)
+# ==========================================
+freq <- c(71,77,100,88,69,60,52,70,71,40,31,47,69,71,68,76,33,40,20,40,20,23)
+
+mean_obs <- mean(freq)
+var_obs  <- var(freq)
+
+# Estimasi Parameter (Method of Moments)
+p_hat <- mean_obs / var_obs
+r_hat <- (mean_obs^2) / (var_obs - mean_obs)
+
+# ==========================================
+# 2. PERSIAPAN "KOTAK" (ENVELOPE)
+# ==========================================
+
+# Kita butuh batas atas (c) untuk tinggi kotak
+# Cari probabilitas tertinggi (mode) dari distribusi teoritisnya
+# Kita cek nilai x dari 0 sampai 200 untuk mencari puncak kurva
+x_range <- 0:200
+probs_teoritis <- dnbinom(x_range, size = r_hat, prob = p_hat)
+max_prob <- max(probs_teoritis) # Ini adalah tinggi atap kotak (c)
+
+# ==========================================
+# 3. FUNGSI ACCEPTANCE-REJECTION
+# ==========================================
+
+acc_rej_negbin <- function(n_needed, r, p, max_peak, max_x_proposal=200) {
+  hasil <- numeric(n_needed)
+  count <- 0       # Menghitung data yang sudah diterima
+  total_try <- 0   # Menghitung total percobaan (untuk cek efisiensi)
+  
+  while(count < n_needed) {
+    total_try <- total_try + 1
+    
+    # A. Bangkitkan KANDIDAT (Proposal)
+    # Kita pakai Uniform Discrete dari 0 sampai max_x_proposal
+    # Ini ibarat memilih posisi horizontal secara acak
+    y_candidate <- sample(0:max_x_proposal, 1)
+    
+    # B. Bangkitkan SYARAT TERIMA (Threshold)
+    # Ini ibarat memilih posisi vertikal secara acak (0 sampai tinggi atap)
+    u <- runif(1, min = 0, max = max_peak)
+    
+    # C. HITUNG PELUANG ASLI di titik kandidat
+    prob_asli <- dnbinom(y_candidate, size = r, prob = p)
+    
+    # D. KEPUTUSAN (Accept / Reject)
+    # Jika posisi vertikal (u) ada DI BAWAH kurva asli, kita TERIMA
+    if (u <= prob_asli) {
+      count <- count + 1
+      hasil[count] <- y_candidate
+    }
+    # Jika tidak, loop akan berulang (Reject), data dibuang
+  }
+  
+  # Info Efisiensi
+  cat("Total Percobaan:", total_try, "\n")
+  cat("Data Diterima  :", n_needed, "\n")
+  cat("Efisiensi      :", round((n_needed/total_try)*100, 2), "%\n\n")
+  
+  return(hasil)
+}
+
+# ==========================================
+# 4. EKSEKUSI
+# ==========================================
+set.seed(999)
+
+# Jalankan simulasi
+data_acc_rej <- acc_rej_negbin(n_needed = length(freq), 
+                               r = r_hat, 
+                               p = p_hat, 
+                               max_peak = max_prob)
+
+# ==========================================
+# 5. HASIL & VISUALISASI
+# ==========================================
+print("--- Data Asli ---")
+print(freq)
+print("--- Data Acceptance-Rejection ---")
+print(data_acc_rej)
+
+# Plot Perbandingan
+par(mfrow=c(1,2))
+hist(freq, main="Data Asli", col="skyblue", xlim=c(0,150), breaks=10)
+abline(v=mean(freq), col="red", lwd=2)
+
+hist(data_acc_rej, main="Simulasi Acceptance-Rejection", col="orange", xlim=c(0,150), breaks=10)
+abline(v=mean(data_acc_rej), col="red", lwd=2)
+```
+
+**3. Direction Transformation**
+
+```{r}
+# ==========================================
+# 1. PERSIAPAN PARAMETER
+# ==========================================
+freq <- c(71,77,100,88,69,60,52,70,71,40,31,47,69,71,68,76,33,40,20,40,20,23)
+
+mean_obs <- mean(freq)
+var_obs  <- var(freq)
+
+p_hat <- mean_obs / var_obs
+r_hat <- (mean_obs^2) / (var_obs - mean_obs)
+
+# Karena kita mensimulasikan kejadian fisik, r harus bilangan bulat (integer).
+# Kita bulatkan r_hat ke integer terdekat.
+r_int <- round(r_hat) 
+
+cat("Target Sukses (r) dibulatkan :", r_int, "\n")
+cat("Peluang Sukses (p)           :", p_hat, "\n\n")
+
+# ==========================================
+# 2. FUNGSI DIRECT TRANSFORMATION (SIMULATION)
+# ==========================================
+
+direct_sim_negbin <- function(n_gen, target_success, prob_success) {
+  hasil <- numeric(n_gen)
+  
+  for (i in 1:n_gen) {
+    failures <- 0
+    successes <- 0
+    
+    # Loop ini meniru proses "melempar koin" berulang kali
+    # Berhenti HANYA jika sukses sudah mencapai target
+    while (successes < target_success) {
+      
+      # Lempar koin (Uniform 0-1)
+      coin_toss <- runif(1)
+      
+      if (coin_toss <= prob_success) {
+        # HORE! Sukses
+        successes <- successes + 1
+      } else {
+        # YAH.. Gagal
+        failures <- failures + 1
+      }
+    }
+    
+    # Simpan jumlah kegagalan
+    hasil[i] <- failures
+  }
+  return(hasil)
+}
+
+# ==========================================
+# 3. EKSEKUSI & VISUALISASI
+# ==========================================
+set.seed(123)
+# Peringatan: Metode ini bisa agak lambat jika angka di data aslimu besar
+# karena komputer melakukan looping berkali-kali untuk setiap angka.
+
+data_direct <- direct_sim_negbin(n_gen = length(freq), 
+                                 target_success = r_int, 
+                                 prob_success = p_hat)
+
+print("--- Data Asli ---")
+print(freq)
+print("--- Data Direct Simulation ---")
+print(data_direct)
+
+# Plot Perbandingan
+par(mfrow=c(1,2))
+hist(freq, main="Data Asli", col="skyblue", xlim=c(0,150), breaks=10)
+abline(v=mean(freq), col="red", lwd=2)
+
+hist(data_direct, main="Simulasi Direct (Bernoulli)", col="salmon", xlim=c(0,150), breaks=10)
+abline(v=mean(data_direct), col="red", lwd=2)
+```
+
+**Membandingkan akurasi 3 teknik pembangkitan bilangan acak**
+
+```{r}
+
+# ==========================================
+# KOMPETISI AKURASI 3 METODE
+# ==========================================
+
+# 1. Parameter Teoritis (Target)
+mean_target <- mean_obs # Dari data asli
+var_target  <- var_obs  # Dari data asli
+cat("TARGET -> Mean:", round(mean_target,2), "| Var:", round(var_target,2), "\n\n")
+
+# 2. Generate Data Besar (n=10.000) agar Hukum Bilangan Besar berlaku
+# Semakin banyak sampel, semakin terlihat kualitas algoritmanya
+N_TEST <- 10000 
+set.seed(123)
+
+# --- Metode A: Inverse Transform ---
+# (Menggunakan parameter r desimal asli)
+data_inv <- inv_transform_negbin(N_TEST, r_hat, p_hat)
+
+# --- Metode B: Acceptance-Rejection ---
+# (Menggunakan parameter r desimal asli)
+# Kita hitung max_prob dulu
+max_prob <- max(dnbinom(0:200, size = r_hat, prob = p_hat))
+data_ar  <- acc_rej_negbin(N_TEST, r_hat, p_hat, max_peak = max_prob)
+
+# --- Metode C: Direct Simulation ---
+# (HARUS membulatkan r ke integer)
+r_int <- round(r_hat)
+data_dir <- direct_sim_negbin(N_TEST, target_success = r_int, prob_success = p_hat)
+
+
+# 3. Fungsi Hitung Error (Mean Squared Error relatif terhadap target)
+calc_error <- function(data_sim, m_target, v_target) {
+  m_sim <- mean(data_sim)
+  v_sim <- var(data_sim)
+  
+  # Selisih (Absolut)
+  diff_mean <- abs(m_sim - m_target)
+  diff_var  <- abs(v_sim - v_target)
+  
+  return(c(Mean_Sim = m_sim, Var_Sim = v_sim, 
+           Err_Mean = diff_mean, Err_Var = diff_var))
+}
+
+# 4. Tampilkan Hasil
+res_inv <- calc_error(data_inv, mean_target, var_target)
+res_ar  <- calc_error(data_ar, mean_target, var_target)
+res_dir <- calc_error(data_dir, mean_target, var_target)
+
+# Buat Tabel Perbandingan
+comparison <- rbind(Inverse = res_inv, 
+                    AcceptReject = res_ar, 
+                    Direct = res_dir)
+
+print(round(comparison, 4))
+
+# 5. Visualisasi QQ-Plot (Cara Visual Cek Akurasi)
+# Jika titik-titik berada di garis merah, berarti akurat.
+par(mfrow=c(1,3))
+qqplot(qbinom(ppoints(N_TEST), size=r_hat, prob=p_hat), data_inv, 
+       main="QQ-Plot: Inverse", xlab="Teoritis", ylab="Simulasi")
+qqline(data_inv, col="red")
+
+qqplot(qbinom(ppoints(N_TEST), size=r_hat, prob=p_hat), data_ar, 
+       main="QQ-Plot: Acc-Rej", xlab="Teoritis", ylab="Simulasi")
+qqline(data_ar, col="red")
+
+qqplot(qbinom(ppoints(N_TEST), size=r_hat, prob=p_hat), data_dir, 
+       main="QQ-Plot: Direct", xlab="Teoritis", ylab="Simulasi")
+qqline(data_dir, col="red")
+```
